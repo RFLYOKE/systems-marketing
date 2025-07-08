@@ -11,5 +11,4 @@ export interface Programmer {
   university: string;
   skills: number[];
   cv: File | string;
-  status: boolean;
 }

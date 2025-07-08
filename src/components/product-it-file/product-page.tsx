@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,9 +8,9 @@ import {
   useCreateProductMutation,
   useDeleteProductMutation,
   useGetProductsQuery,
+  useGetProductByIdQuery,
   useUpdateProductMutation,
 } from "@/services/product.service";
-import { useGetProgrammersQuery } from "@/services/programmer.service";
 import { Product } from "@/types/product";
 import useModal from "@/hooks/use-modal";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
@@ -21,6 +21,14 @@ export default function ProductPage() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const { isOpen, openModal, closeModal } = useModal();
+  const [hasInitializedForm, setHasInitializedForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  const { data: selectedProduct, isFetching: isFetchingProduct } =
+    useGetProductByIdQuery(editingId!, {
+      skip: editingId === null,
+      refetchOnMountOrArgChange: true, // Pastikan data terbaru diambil saat editingId berubah
+    });
 
   const { data, isLoading, refetch } = useGetProductsQuery({
     page,
@@ -32,27 +40,63 @@ export default function ProductPage() {
   const [updateProduct, { isLoading: isLoadingUpdate }] =
     useUpdateProductMutation();
   const [deleteProduct] = useDeleteProductMutation();
-  const { data: programmerResponse, isLoading: loadingProgrammers } =
-    useGetProgrammersQuery({
-      page: 1,
-      paginate: 100, // pastikan cukup banyak agar semua ID bisa dikenali
-      search: "",
-    });
-
-  const allProgrammers = programmerResponse?.data ?? [];  
 
   const [formData, setFormData] = useState<FormData>(new FormData());
-  const [editingId, setEditingId] = useState<number | null>(null);
 
-  const getProgrammerNames = (ids: (number | string)[]): string => {
-    return ids
-      .map((id) => {
-        const found = allProgrammers.find((p) => p.id === Number(id));
-        return found ? `${found.name}` : null;
-      })
-      .filter(Boolean) // hapus null
-      .join(", ");
-  };  
+  const memoizedOpenModal = useCallback(() => {
+    openModal();
+  }, [openModal]);
+
+  const memoizedRefetch = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  useEffect(() => {
+    if (
+      selectedProduct &&
+      editingId !== null &&
+      !isFetchingProduct &&
+      !hasInitializedForm
+    ) {
+      const newForm = new FormData();
+      newForm.set("id", selectedProduct.id.toString());
+      newForm.set("category", selectedProduct.category);
+      newForm.set("title", selectedProduct.title);
+      newForm.set("description", selectedProduct.description);
+      newForm.set("technology", selectedProduct.technology);
+
+      if (Array.isArray(selectedProduct.programmers)) {
+        selectedProduct.programmers.forEach((p) =>
+          newForm.append("programmers[]", p.id.toString())
+        );
+      }
+
+      setFormData(newForm);
+      setHasInitializedForm(true);
+      memoizedOpenModal();
+    }
+  }, [
+    selectedProduct,
+    editingId,
+    isFetchingProduct,
+    hasInitializedForm,
+    memoizedOpenModal,
+  ]);  
+
+  const ProgrammerNames = ({ productId }: { productId: number }) => {
+    const {
+      data,
+      isLoading,
+    } = useGetProductByIdQuery(productId, {
+      refetchOnMountOrArgChange: true,
+    });
+
+    if (isLoading) return <span>Loading...</span>;
+    if (!data?.programmers || data.programmers.length === 0)
+      return <span>-</span>;
+
+    return <span>{data.programmers.map((p) => p.name).join(", ")}</span>;
+  };
 
   const handleSubmit = async () => {
     try {
@@ -64,10 +108,10 @@ export default function ProductPage() {
         await Swal.fire("Berhasil", "Produk berhasil ditambahkan.", "success");
       }
 
-      setFormData(new FormData());
-      setEditingId(null);
-      closeModal();
-      refetch();
+      setFormData(new FormData()); // Reset form data setelah submit
+      setEditingId(null); // Reset editingId
+      closeModal(); // Tutup modal
+      memoizedRefetch(); // Refresh daftar produk di tabel
     } catch (err: unknown) {
       const error = err as FetchBaseQueryError & {
         data?: {
@@ -106,20 +150,10 @@ export default function ProductPage() {
   };
 
   const handleEdit = (product: Product) => {
-    const newForm = new FormData();
-    newForm.set("category", product.category);
-    newForm.set("title", product.title);
-    newForm.set("description", product.description);
-    newForm.set("technology", product.technology);
-    if (Array.isArray(product.programmers)) {
-      product.programmers.forEach((p) =>
-        newForm.append("programmers[]", p.toString())
-      );
-    }    
-    setFormData(newForm);
+    setHasInitializedForm(false);
+    setFormData(new FormData());
     setEditingId(product.id);
-    openModal();
-  };  
+  };
 
   const handleDelete = async (id: number) => {
     const result = await Swal.fire({
@@ -135,7 +169,7 @@ export default function ProductPage() {
 
     try {
       await deleteProduct(id);
-      refetch();
+      memoizedRefetch();
       await Swal.fire("Berhasil!", "Data berhasil dihapus.", "success");
     } catch (err) {
       console.error("Gagal menghapus produk:", err);
@@ -179,6 +213,7 @@ export default function ProductPage() {
           onClick={() => {
             setFormData(new FormData());
             setEditingId(null);
+            setHasInitializedForm(false);
             openModal();
           }}
         >
@@ -217,20 +252,22 @@ export default function ProductPage() {
                 filtered.map((item, idx) => (
                   <tr key={item.id} className="border-t">
                     <td className="px-4 py-2 space-x-2">
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleEdit(item)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        Hapus
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => handleEdit(item)}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDelete(item.id)}
+                        >
+                          Hapus
+                        </Button>
+                      </div>
                     </td>
                     <td className="px-4 py-2">
                       {(page - 1) * perPage + idx + 1}
@@ -247,13 +284,8 @@ export default function ProductPage() {
                     <td className="px-4 py-2 whitespace-nowrap">
                       {item.technology}
                     </td>
-                    <td className="px-4 py-2 whitespace-nowrap" colSpan={1}>
-                      {loadingProgrammers
-                        ? "Loading..."
-                        : Array.isArray(item.programmers) &&
-                          item.programmers.length > 0
-                        ? getProgrammerNames(item.programmers)
-                        : "-"}
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      <ProgrammerNames productId={item.id} />
                     </td>
                   </tr>
                 ))
@@ -289,17 +321,26 @@ export default function ProductPage() {
       {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <ProductForm
-            form={formData}
-            setForm={setFormData}
-            onCancel={() => {
-              setFormData(new FormData());
-              setEditingId(null);
-              closeModal();
-            }}
-            onSubmit={handleSubmit}
-            isLoading={isLoadingCreate || isLoadingUpdate}
-          />
+          {isFetchingProduct && editingId !== null && !selectedProduct ? ( // Hanya tampilkan loading jika sedang fetching dan data belum ada
+            <div className="bg-white dark:bg-zinc-900 text-center p-6 rounded-lg">
+              <p className="text-sm text-muted-foreground animate-pulse">
+                Memuat detail produk...
+              </p>
+            </div>
+          ) : (
+            <ProductForm
+              form={formData}
+              setForm={setFormData}
+              onCancel={() => {
+                setFormData(new FormData());
+                setHasInitializedForm(false);
+                setEditingId(null);
+                closeModal();
+              }}
+              onSubmit={handleSubmit}
+              isLoading={isLoadingCreate || isLoadingUpdate}
+            />
+          )}
         </div>
       )}
     </div>

@@ -41,10 +41,6 @@ export default function ProductForm({
     return form.get(key)?.toString() ?? "";
   };
 
-  const getFormArray = (key: string): string[] => {
-    return form.getAll(key).map((val) => val.toString());
-  };
-
   const updateFormValue = (key: string, value: string | File) => {
     const newForm = new FormData();
     for (const [existingKey, existingValue] of form.entries()) {
@@ -57,15 +53,23 @@ export default function ProductForm({
   };
 
   const updateProgrammers = (values: string[]) => {
+    // Hapus semua programmers[] lama
     const newForm = new FormData();
-    for (const [existingKey, existingValue] of form.entries()) {
-      if (!existingKey.startsWith("programmers")) {
-        newForm.append(existingKey, existingValue);
+
+    // Copy seluruh entry kecuali 'programmers[]'
+    form.forEach((value, key) => {
+      if (key !== "programmers[]") {
+        newForm.append(key, value);
       }
-    }
-    values.forEach((val) => newForm.append("programmers[]", val));
+    });
+
+    // Tambahkan nilai baru
+    values.forEach((val) => {
+      newForm.append("programmers[]", val);
+    });
+
     setForm(newForm);
-  };
+  };  
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -138,11 +142,17 @@ export default function ProductForm({
           ) : (
             <MultiSelect
               options={programmers.map((p) => ({
-                label: `${p.name}`,
+                label: p.name,
                 value: p.id.toString(),
                 group: "Programmer",
               }))}
-              selected={getFormArray("programmers[]")}
+              selected={
+                form.has("programmers[]")
+                  ? (form.getAll("programmers[]") as string[]).map((val) =>
+                      val.toString()
+                    )
+                  : []
+              }
               onChange={updateProgrammers}
               placeholder="Pilih programmer"
               minSelect={1}
