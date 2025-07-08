@@ -1,5 +1,5 @@
 import { apiSlice } from "../base-query";
-import { TaskSchedule } from "@/types/taskactivity";
+import { TaskSchedule } from "@/types/product-transaction";
 
 export const taskScheduleApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({

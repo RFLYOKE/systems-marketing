@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { CostParameter } from "@/types/parameter";
+import { CostParameter } from "@/types/jasa-transaction";
 
 interface CostParameterState {
   data: CostParameter[];

@@ -1,5 +1,5 @@
 'use client';
-import DataMarketingPage from "@/components/marketing-management/data-marketing-page";
+import DataMarketingPage from "@/components/marketing-management/transaction-jasa";
 import { SiteHeader } from "@/components/site-header";
 
 

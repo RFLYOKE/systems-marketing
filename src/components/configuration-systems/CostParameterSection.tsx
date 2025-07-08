@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import FormCreateCostParameter from "@/components/formModal/form-create-param";
-import { CostParameter } from "@/types/parameter";
+import { CostParameter } from "@/types/jasa-transaction";
 import { useRouter } from "next/navigation";
 import useModal from "@/hooks/use-modal";
 import { useCostParameterStore } from "@/store/costParameterStore";

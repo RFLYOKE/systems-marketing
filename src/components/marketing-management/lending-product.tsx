@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import useModal from "@/hooks/use-modal";
-import LendingProductForm from "@/components/formModal/lending-product-form";
+import LendingProductForm from "@/components/formModal/jasa-transaction-form";
 import { LendingProduct } from "@/types/sales-manage";
 import {
   useGetLendingProductsQuery,
