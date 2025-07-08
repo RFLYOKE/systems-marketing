@@ -243,6 +243,7 @@ export default function ProgrammerPage() {
                 <th className="px-4 py-2">Tempat Lahir</th>
                 <th className="px-4 py-2">Tanggal Lahir</th>
                 <th className="px-4 py-2">Kampus</th>
+                <th className="px-4 py-2">CV</th>
                 <th className="px-4 py-2">Skills</th>
               </tr>
             </thead>
@@ -287,7 +288,11 @@ export default function ProgrammerPage() {
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">{p.address}</td>
                     <td className="px-4 py-2 whitespace-nowrap">
-                      {p.gender || "-"}
+                      {p.gender === "L"
+                        ? "Laki-laki"
+                        : p.gender === "M"
+                        ? "Perempuan"
+                        : "-"}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       {p.birth_place || "-"}
@@ -299,6 +304,20 @@ export default function ProgrammerPage() {
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       {p.university || "-"}
+                    </td>
+                    <td className="px-4 py-2 whitespace-nowrap">
+                      {typeof p.cv === "string" ? (
+                        <a
+                          href={p.cv}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline"
+                        >
+                          Lihat CV
+                        </a>
+                      ) : (
+                        "-"
+                      )}
                     </td>
                     <td className="px-4 py-2 whitespace-nowrap">
                       <SkillNames programmerId={p.id} />

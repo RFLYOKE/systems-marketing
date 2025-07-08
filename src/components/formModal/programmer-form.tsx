@@ -138,7 +138,7 @@ export default function ProgrammerForm({
           >
             <option value="">Pilih</option>
             <option value="L">Laki-laki</option>
-            <option value="P">Perempuan</option>
+            <option value="M">Perempuan</option>
           </select>
         </div>
 
