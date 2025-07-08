@@ -27,7 +27,7 @@ export default function ProductPage() {
   const { data: selectedProduct, isFetching: isFetchingProduct } =
     useGetProductByIdQuery(editingId!, {
       skip: editingId === null,
-      refetchOnMountOrArgChange: true, // Pastikan data terbaru diambil saat editingId berubah
+      refetchOnMountOrArgChange: true, 
     });
 
   const { data, isLoading, refetch } = useGetProductsQuery({
@@ -321,7 +321,7 @@ export default function ProductPage() {
       {/* Modal */}
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          {isFetchingProduct && editingId !== null && !selectedProduct ? ( // Hanya tampilkan loading jika sedang fetching dan data belum ada
+          {isFetchingProduct && editingId !== null && !selectedProduct ? ( 
             <div className="bg-white dark:bg-zinc-900 text-center p-6 rounded-lg">
               <p className="text-sm text-muted-foreground animate-pulse">
                 Memuat detail produk...

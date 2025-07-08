@@ -9,6 +9,13 @@ export interface Programmer {
   birth_place: string;
   birth_date: string;
   university: string;
-  skills: number[];
+  skills: {
+    id: number;
+    name: string;
+    description: string;
+    status: boolean;
+    created_at?: string;
+    updated_at?: string;
+  }[];
   cv: File | string;
 }

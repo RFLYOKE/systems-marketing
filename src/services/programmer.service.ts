@@ -1,6 +1,5 @@
 import { apiSlice } from "./base-query";
 import { Programmer } from "@/types/programmer";
-import { Skill } from "@/types/skill";
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
 interface GetProgrammersParams {
@@ -156,45 +155,6 @@ export const programmerApi = apiSlice.injectEndpoints({
         return { data: true };
       },
     }),
-
-    // ✅ Get all skill categories (for combobox Skill #1 & Skill #2)
-    getSkills: builder.query<
-      {
-        skills: Skill[]; // ubah `data` → `skills`
-        last_page: number;
-        current_page: number;
-        total: number;
-        per_page: number;
-      },
-      { page: number; paginate: number; search?: string }
-    >({
-      query: ({ page, paginate, search = "" }) => ({
-        url: `/master/skills`,
-        method: "GET",
-        params: {
-          page,
-          paginate,
-          search,
-        },
-      }),
-      transformResponse: (response: {
-        code: number;
-        message: string;
-        data: {
-          current_page: number;
-          data: Skill[];
-          last_page: number;
-          total: number;
-          per_page: number;
-        };
-      }) => ({
-        skills: response.data.data,
-        last_page: response.data.last_page,
-        current_page: response.data.current_page,
-        total: response.data.total,
-        per_page: response.data.per_page,
-      }),
-    }),
   }),
   overrideExisting: false,
 });
@@ -207,5 +167,4 @@ export const {
   useDeleteProgrammerMutation,
   useImportProgrammerMutation,
   useExportProgrammerMutation,
-  useGetSkillsQuery,
 } = programmerApi;

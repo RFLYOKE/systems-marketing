@@ -12,10 +12,12 @@ export const skillApi = apiSlice.injectEndpoints({
         total: number;
         per_page: number;
       },
-      { page: number; paginate: number }
+      { page: number; paginate: number; search?: string }
     >({
-      query: ({ page, paginate }) => ({
-        url: `/master/skills?paginate=${paginate}&page=${page}`,
+      query: ({ page, paginate, search }) => ({
+        url: `/master/skills?page=${page}&paginate=${paginate}${
+          search ? `&search=${search}` : ""
+        }`,
         method: "GET",
       }),
       transformResponse: (response: {

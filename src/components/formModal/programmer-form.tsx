@@ -3,9 +3,9 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useGetSkillsQuery } from "@/services/programmer.service";
+import { useGetSkillsQuery } from "@/services/skillscategory.service";
 import { Skill } from "@/types/skill";
-import MultiSelect from "@/components/ui/multi-select"; // import komponen MultiSelect
+import MultiSelect from "@/components/ui/multi-select";
 
 interface ProgrammerFormProps {
   form: FormData;
@@ -13,6 +13,7 @@ interface ProgrammerFormProps {
   onCancel: () => void;
   onSubmit: () => void;
   editingId: number | null;
+  isLoading?: boolean;
 }
 
 export default function ProgrammerForm({
@@ -21,6 +22,7 @@ export default function ProgrammerForm({
   onCancel,
   onSubmit,
   editingId,
+  isLoading = false,
 }: ProgrammerFormProps) {
   const { data: skillResponse, isLoading: loadingSkills } = useGetSkillsQuery({
     page: 1,
@@ -28,7 +30,7 @@ export default function ProgrammerForm({
     search: "",
   });
 
-  const skills: Skill[] = skillResponse?.skills ?? [];
+  const skills: Skill[] = skillResponse?.data ?? [];
   const skillOptions = skills.map((skill) => ({
     label: skill.name,
     value: skill.id.toString(),
@@ -36,7 +38,8 @@ export default function ProgrammerForm({
   }));
 
   const getFormValue = (key: string): string => {
-    return form.get(key)?.toString() || "";
+    const val = form.get(key);
+    return typeof val === "string" ? val : "";
   };
 
   const getFormArray = (key: string): string[] => {
@@ -45,38 +48,39 @@ export default function ProgrammerForm({
 
   const updateFormValue = (key: string, value: string | File) => {
     const newForm = new FormData();
-    for (const [existingKey, existingValue] of form.entries()) {
-      if (existingKey !== key && existingKey !== `${key}[]`) {
-        newForm.append(existingKey, existingValue);
+    form.forEach((v, k) => {
+      if (k !== key && k !== `${key}[]`) {
+        newForm.append(k, v);
       }
-    }
+    });
     newForm.append(key, value);
     setForm(newForm);
   };
 
   const updateSkills = (values: string[]) => {
     const newForm = new FormData();
-    for (const [existingKey, existingValue] of form.entries()) {
-      if (!existingKey.startsWith("skills")) {
-        newForm.append(existingKey, existingValue);
+    form.forEach((v, k) => {
+      if (!k.startsWith("skills")) {
+        newForm.append(k, v);
       }
-    }
+    });
     values.forEach((val) => newForm.append("skills[]", val));
     setForm(newForm);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      updateFormValue("cv", file);
-    }
+    if (file) updateFormValue("cv", file);
   };
+
+  const cvValue = form.get("cv");
+  const isEdit = editingId !== null && form.has("name");
 
   return (
     <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 w-full max-w-2xl space-y-4">
       <div className="flex justify-between items-center">
         <h2 className="text-lg font-semibold">
-          {editingId ? "Edit Programmer" : "Tambah Programmer"}
+          {isEdit ? "Edit Programmer" : "Tambah Programmer"}
         </h2>
         <Button variant="ghost" onClick={onCancel}>
           ✕
@@ -163,7 +167,6 @@ export default function ProgrammerForm({
           />
         </div>
 
-        {/* Multi Skill */}
         <div className="sm:col-span-2 flex flex-col gap-y-1">
           <Label>Skills</Label>
           {loadingSkills ? (
@@ -181,7 +184,6 @@ export default function ProgrammerForm({
           )}
         </div>
 
-        {/* CV */}
         <div className="sm:col-span-2 flex flex-col gap-y-1">
           <Label>Upload CV</Label>
           <Input
@@ -189,19 +191,21 @@ export default function ProgrammerForm({
             accept=".pdf,.doc,.docx"
             onChange={handleFileChange}
           />
-          {getFormValue("cv") && (
+          {cvValue && typeof cvValue === "string" && (
             <p className="text-sm text-muted-foreground">
-              File terpilih: {getFormValue("cv")}
+              File terpilih: {cvValue}
             </p>
           )}
         </div>
       </div>
 
       <div className="pt-4 flex justify-end gap-2">
-        <Button variant="outline" onClick={onCancel}>
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
           Batal
         </Button>
-        <Button onClick={onSubmit}>Simpan</Button>
+        <Button onClick={onSubmit} disabled={isLoading}>
+          {isLoading ? "Menyimpan..." : isEdit ? "Perbarui" : "Simpan"}
+        </Button>
       </div>
     </div>
   );
